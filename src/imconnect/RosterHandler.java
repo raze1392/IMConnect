@@ -46,7 +46,7 @@ public class RosterHandler {
             contacts = roster.getEntries();
             for (RosterEntry cn : contacts) {
                 // Add code for display in UI
-                System.out.println(cn.getName()+" : "+cn.getStatus());
+                System.out.println(cn.getUser());
             }
         }
     }

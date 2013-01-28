@@ -43,7 +43,7 @@ public class IMConnect {
             connection = null;
         }
         System.out.println("Connection id: "+gId);
-        System.out.println("User: "+auth);
+        System.out.println("User Authenticated: "+auth);
         
         RosterHandler rh = new RosterHandler(connection);
         Thread.sleep(2000);
