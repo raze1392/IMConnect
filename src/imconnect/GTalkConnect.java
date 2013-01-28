@@ -1,12 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package imconnect;
-import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
@@ -14,70 +9,106 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
 
 /**
- *
+ * Connects to GTalk using Plain SASL
  * @author Shivam
+ * @since Production
+ * @version 1.0
  */
-public class GTalkConnect {
+public class GTalkConnect implements ServerSettings {
     
-    private String username;
-    private String password;
     private static final int packetReplyTimeout = 500; // millis
     private XMPPConnection connection;
-    private Collection<RosterEntry> contacts;
     private Presence presence;
     
-    /**
-     * Entries for GoogleTalk
-     * @param username
-     * @param password
-     */
-    public GTalkConnect(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
-    
-    // Connect to GTalk
-    public void connectToGtalk() throws InterruptedException {
+    @Override
+    public String serverSetup(String host, int port, boolean debug) {
         try {
-            SmackConfiguration.setPacketReplyTimeout(packetReplyTimeout);
-            ConnectionConfiguration config = new ConnectionConfiguration("talk.google.com", 5222, "gmail.com");
-            connection = new XMPPConnection(config);
-            connection.connect();
-            // Log into the server
-            System.out.println(connection);
             SASLAuthentication.supportSASLMechanism("PLAIN", 0);
-            Thread.sleep(5000);
-            connection.login(username, password, "IMConnect");
-            System.out.println(connection.isAuthenticated());
+            SmackConfiguration.setPacketReplyTimeout(packetReplyTimeout);
+            ConnectionConfiguration config = new ConnectionConfiguration(host, port);
+            config.setDebuggerEnabled(debug);
+            config.setSASLAuthenticationEnabled(true); 
+            config.setRosterLoadedAtLogin(true);
+            connection = new XMPPConnection(config);
+            if (connection != null) {
+                connection.connect();
+                return connection.getConnectionID();
+            } else {
+                return "ERROR";
+            }
         } catch (XMPPException e) {
-            System.out.println("Error: " + e.getXMPPError());
+            System.out.println("Error: " + e);
+            return "ERROR";
         }
     }
     
-    // Get Contacts / Roster
-    public void getContacts() throws InterruptedException {
-        Roster roster = connection.getRoster();
-        Thread.sleep(2000);
-        contacts = roster.getEntries();
-        Thread.sleep(2000);
-        System.out.println(contacts);
-        for (RosterEntry contact : contacts) {
-            System.out.println(contact);
+    @Override
+    public String serverSetup(String host, int port, String service, boolean debug) {
+        try {
+            SASLAuthentication.supportSASLMechanism("PLAIN", 0);
+            SmackConfiguration.setPacketReplyTimeout(packetReplyTimeout);
+            ConnectionConfiguration config = new ConnectionConfiguration(host, port, service);
+            config.setDebuggerEnabled(debug);
+            config.setSASLAuthenticationEnabled(true); 
+            config.setRosterLoadedAtLogin(true);
+            connection = new XMPPConnection(config);
+            if (connection != null) {
+                connection.connect();
+                return connection.getConnectionID();
+            } else {
+                return "Not Connected";
+            }
+        } catch (XMPPException e) {
+            System.out.println("Error: " + e);
+            return "ERROR";
         }
     }
-    
-    // Set a status
-    public void setStatus(String status) {
-        System.out.println(status);
-        presence.setStatus(status);
-        connection.sendPacket(presence);
+
+    @Override
+    public boolean serverLogin(String username, String password) {
+        if (connection != null && connection.isConnected()) {
+            try {
+                connection.login(username, password, "IMConnect");
+            } catch (XMPPException ex) {
+                Logger.getLogger(GTalkConnect.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return connection.isAuthenticated();
+        } else {
+            return connection.isAuthenticated();
+        }
     }
-    
-    // Disconnect from GTalk
-    public void disconnectGTalk() {
+
+    @Override
+    public boolean serverLogin(String username, String password, String resource) {
+        if (connection != null && connection.isConnected()) {
+            try {
+                connection.login(username, password, resource);
+            } catch (XMPPException ex) {
+                Logger.getLogger(GTalkConnect.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return connection.isAuthenticated();
+        } else {
+            return connection.isAuthenticated();
+        }
+    }
+
+    @Override
+    public boolean serverDisconnect() {
         if (connection != null && connection.isConnected()) {
             presence = new Presence(Presence.Type.unavailable);
             connection.disconnect(presence);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public XMPPConnection getConnection() {
+        if (connection != null && connection.isConnected()) {
+            return connection;
+        } else {
+            return null;
         }
     }
     

@@ -1,13 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package imconnect;
 
-import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
@@ -15,60 +10,16 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
 
 /**
- *
+ * Connects to Facebook using DIGEST-MD5 SASL
  * @author Shivam
+ * @since Production
+ * @version 1.0
  */
-public class FacebookConnect {
+public class FacebookConnect implements ServerSettings {
     
-    private String username;
-    private String password;
     private static final int packetReplyTimeout = 500; // millis
     private XMPPConnection connection;
-    private Collection<RosterEntry> contacts;
     private Presence presence;
-    
-    /**
-     * Entries for GoogleTalk
-     * @param username
-     * @param password
-     */
-    public FacebookConnect(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
-    
-    // Connect to GTalk
-    public void connectToFacebook() throws InterruptedException {
-        try {
-            ConnectionConfiguration config = new ConnectionConfiguration("chat.facebook.com", 5222, "chat.facebook.com");
-            SASLAuthentication.registerSASLMechanism("DIGEST-MD5", MySASLDigestMD5Mechanism.class);
-            SASLAuthentication.supportSASLMechanism("DIGEST-MD5", 0);
-            connection = new XMPPConnection(config);
-            config.setSASLAuthenticationEnabled(true); 
-            config.setDebuggerEnabled(false);
-            connection.connect();
-            // Log into the server
-            System.out.println(connection);
-            System.out.println(username);
-            Thread.sleep(15000);
-            connection.login(username, password);
-            System.out.println(connection.isAuthenticated());
-        } catch (XMPPException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
-    
-    // Get Contacts / Roster
-    public void getContacts() throws InterruptedException {
-        Roster roster = connection.getRoster();
-        Thread.sleep(2000);
-        contacts = roster.getEntries();
-        Thread.sleep(2000);
-        System.out.println(contacts);
-        for (RosterEntry contact : contacts) {
-            System.out.println(contact);
-        }
-    }
     
     // Set a status
     public void setStatus(String status) {
@@ -76,12 +27,98 @@ public class FacebookConnect {
         presence.setStatus(status);
         connection.sendPacket(presence);
     }
+
+    @Override
+    public String serverSetup(String host, int port, boolean debug) {
+        try {
+            SASLAuthentication.registerSASLMechanism("DIGEST-MD5", MySASLDigestMD5Mechanism.class);
+            SASLAuthentication.supportSASLMechanism("DIGEST-MD5", 0);
+            SmackConfiguration.setPacketReplyTimeout(packetReplyTimeout);
+            ConnectionConfiguration config = new ConnectionConfiguration(host, port);
+            config.setDebuggerEnabled(debug);
+            config.setSASLAuthenticationEnabled(true); 
+            config.setRosterLoadedAtLogin(true);
+            connection = new XMPPConnection(config);
+            if (connection != null) {
+                connection.connect();
+                return connection.getConnectionID();
+            } else {
+                return "ERROR";
+            }
+        } catch (XMPPException e) {
+            System.out.println("Error: " + e);
+            return "ERROR";
+        }
+    }
     
-    // Disconnect from GTalk
-    public void disconnectGTalk() {
+    @Override
+    public String serverSetup(String host, int port, String service, boolean debug) {
+         try {
+            SASLAuthentication.registerSASLMechanism("DIGEST-MD5", MySASLDigestMD5Mechanism.class);
+            SASLAuthentication.supportSASLMechanism("DIGEST-MD5", 0);
+            SmackConfiguration.setPacketReplyTimeout(packetReplyTimeout);
+            ConnectionConfiguration config = new ConnectionConfiguration(host, port, service);
+            config.setDebuggerEnabled(debug);
+            config.setSASLAuthenticationEnabled(true); 
+            config.setRosterLoadedAtLogin(true);
+            connection = new XMPPConnection(config);
+            if (connection != null) {
+                connection.connect();
+                return connection.getConnectionID();
+            } else {
+                return "Not Connected";
+            }
+        } catch (XMPPException e) {
+            System.out.println("Error: " + e);
+            return "ERROR";
+        }
+    }
+
+    @Override
+    public boolean serverLogin(String username, String password) {
+        if (connection != null && connection.isConnected()) {
+            try {
+                connection.login(username, password, "IMConnect");
+            } catch (XMPPException ex) {
+                Logger.getLogger(FacebookConnect.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return connection.isAuthenticated();
+        } else {
+            return connection.isAuthenticated();
+        }
+    }
+
+    @Override
+    public boolean serverLogin(String username, String password, String resource) {
+        if (connection != null && connection.isConnected()) {
+            try {
+                connection.login(username, password, resource);
+            } catch (XMPPException ex) {
+                Logger.getLogger(FacebookConnect.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return connection.isAuthenticated();
+        } else {
+            return connection.isAuthenticated();
+        }
+    }
+
+    @Override
+    public boolean serverDisconnect() {
         if (connection != null && connection.isConnected()) {
             presence = new Presence(Presence.Type.unavailable);
             connection.disconnect(presence);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public XMPPConnection getConnection() {
+        if (connection != null && connection.isConnected()) {
+            return connection;
+        } else {
+            return null;
         }
     }
     

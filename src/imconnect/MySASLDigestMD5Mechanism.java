@@ -1,12 +1,13 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package imconnect;
 
 /**
- *
+ * 
+ * DONT CHANGE THIS FILE
+ * 
+ * Digest-MD5 mechanism for facebook
  * @author Shivam
+ * @since Production
+ * @version 1.0
  */
 import java.io.IOException;
 import java.util.HashMap;
