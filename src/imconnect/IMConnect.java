@@ -1,5 +1,6 @@
 package imconnect;
 
+import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.XMPPConnection;
 
 /**
@@ -45,12 +46,17 @@ public class IMConnect {
         System.out.println("Connection id: "+gId);
         System.out.println("User Authenticated: "+auth);
         
+        MessageAndPresenceHandler mh = new MessageAndPresenceHandler(connection);
         RosterHandler rh = new RosterHandler(connection);
         Thread.sleep(2000);
         rh.displayRoster();
         
+        String jid = rh.getContact("shivam.shah@openlifecycle.com");
+        ChatHandler ch = new ChatHandler(connection, mh);
+        Chat c = ch.createChat(jid);
+        ch.sendMessage(c, "Hello how are you");
+        
         gt.serverDisconnect();
     
-        // TBD code for CodeListener, MessageListener
     }
 }

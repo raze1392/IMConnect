@@ -51,6 +51,15 @@ public class RosterHandler {
         }
     }
     
+    public String getContact(String user) {
+        RosterEntry contact = roster.getEntry(user);
+        if (contact != null) {
+            return contact.getUser();
+        } else {
+            return null;
+        }
+    }
+    
     // To be added Groups, add, delete
     
 }
